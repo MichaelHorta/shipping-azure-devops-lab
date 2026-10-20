@@ -1,0 +1,60 @@
+trigger:
+  batch: true
+  branches:
+    include:
+      - main
+
+# GitHub Actions handles pull-request validation in this lab.
+pr: none
+
+pool:
+  vmImage: ubuntu-latest
+
+jobs:
+  - job: Package
+    displayName: Test and package API
+    timeoutInMinutes: 10
+
+    steps:
+      - checkout: self
+
+      - task: UseDotNet@2
+        displayName: Install .NET
+        inputs:
+          packageType: sdk
+          version: '10.0.x'
+
+      - script: dotnet restore ShippingLab.sln
+        displayName: Restore dependencies
+
+      - script: dotnet build ShippingLab.sln --configuration Release --no-restore
+        displayName: Build solution
+
+      - script: >
+          dotnet test ShippingLab.sln
+          --configuration Release
+          --no-build
+          --logger trx
+          --results-directory "$(Agent.TempDirectory)/TestResults"
+        displayName: Run tests
+
+      - task: PublishTestResults@2
+        displayName: Publish test results
+        condition: succeededOrFailed()
+        inputs:
+          testResultsFormat: VSTest
+          testResultsFiles: '**/*.trx'
+          searchFolder: '$(Agent.TempDirectory)/TestResults'
+
+      - script: >
+          dotnet publish src/Shipping.Api/Shipping.Api.csproj
+          --configuration Release
+          --no-build
+          --output "$(Build.ArtifactStagingDirectory)/shipping-api"
+        displayName: Publish application files
+
+      - task: PublishPipelineArtifact@1
+        displayName: Upload release package
+        inputs:
+          targetPath: '$(Build.ArtifactStagingDirectory)/shipping-api'
+          artifact: shipping-api
