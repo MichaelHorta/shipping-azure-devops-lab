@@ -11,6 +11,11 @@ public static class ShippingCalculator
                 "Weight must be greater than zero.");
         }
 
+        if (weightKg >= 10)
+        {
+            return 0m;
+        }
+
         // Fictional pricing for this exercise.
         return 2_000m + weightKg * 500m;
     }
