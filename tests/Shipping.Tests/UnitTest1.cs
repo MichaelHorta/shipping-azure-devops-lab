@@ -9,6 +9,7 @@ public class ShippingCalculatorTests
     [InlineData(1, 2500)]
     [InlineData(2, 3000)]
     [InlineData(5, 4500)]
+    [InlineData(10, 0)]
     public void Calculate_ReturnsExpectedQuote(
         int weightKg,
         int expectedAmount)
